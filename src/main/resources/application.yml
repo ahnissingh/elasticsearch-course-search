@@ -1,4 +1,7 @@
 spring:
+  jackson:
+    serialization:
+      write-date-keys-as-timestamps: false
   application:
     name: searchapi
   threads:
@@ -17,4 +20,4 @@ logging:
 app:
   data:
     courses-file: sample-courses.json
-    clear-data: false
+    clear-data: true
