@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: searchapi
+  threads:
+    virtual:
+      enabled: true
+  elasticsearch:
+    uris: http://localhost:9200
+  data:
+    elasticsearch:
+      repositories:
+        enabled: true
+logging:
+  level:
+    root: info
+    org.springframework.data.elasticsearch: DEBUG
