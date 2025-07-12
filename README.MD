@@ -56,6 +56,7 @@ docker-compose up -d
 ```
 
 ### You should see a response like:
+
 ```json
 {
   "name": "elasticsearch",
@@ -65,34 +66,176 @@ docker-compose up -d
   }
 }
 ```
+
 Elasticsearch is now accessible at: http://localhost:9200
 
+##  Sample Data Ingestion
 
-## 📦 Sample Data Ingestion
+On application startup, the application automatically reads and indexes course data from the [
+`sample-courses.json`](src/main/resources/sample-courses.json) file into Elasticsearch.
 
-On application startup, the application automatically reads and indexes course data from the [`sample-courses.json`](src/main/resources/sample-courses.json) file into Elasticsearch.
-
-### ✅ How It Works
+###  How It Works
 
 - The file `sample-courses.json` located under `src/main/resources` contains 50+ sample course entries.
-- A Spring `ApplicationRunner` component loads this file at startup and bulk-indexes all documents into the `courses` index in Elasticsearch.
-- > The JSON filename can also be configured via `app.data.courses-file` in `application.yml` (must be a valid JSON file).
+- A Spring `ApplicationRunner` component loads this file at startup and bulk-indexes all documents into the `courses`
+  index in Elasticsearch.
+- > The JSON filename can also be configured via `app.data.courses-file` in `application.yml` (must be a valid JSON
+  file).
 
-
-### 🔄 Triggering Data Ingestion
+###  Triggering Data Ingestion
 
 Simply run the Spring Boot application:
 
 ```bash
 ./mvnw spring-boot:run
 ```
+
 ### Optional: Clearing Existing Data
 
-If you want the application to clear existing course data from Elasticsearch before loading fresh data from `sample-courses.json`, you can enable the following configuration:
+If you want the application to clear existing course data from Elasticsearch before loading fresh data from
+`sample-courses.json`, you can enable the following configuration:
 
 ```yaml
 # application.yml
 app:
   data:
     clear-data: true
+```
+---
+# `/api/search` — Search Courses Endpoint
+
+### **HTTP Method:** `GET`
+
+### **Endpoint:** `/api/search`
+
+---
+
+## Description
+
+Searches for courses using optional filters like keyword, category, type, age, price, start date, sorting, and
+pagination.
+
+---
+
+## Query Parameters
+
+| **Name**    | **Type**             | **Required** | **Description**                                                                     |
+|-------------|----------------------|--------------|-------------------------------------------------------------------------------------|
+| `q`         | `String`             | No           | Full-text search query against course title & description                           |
+| `category`  | `String`             | No           | Filter by course category (e.g., `"Programming"`, `"Math"`)                         |
+| `type`      | `String`             | No           | Filter by course type (e.g., `"online"`, `"offline"`, `"ONE_TIME"`)                 |
+| `minAge`    | `int`                | No           | Minimum eligible age                                                                |
+| `maxAge`    | `int`                | No           | Maximum eligible age                                                                |
+| `minPrice`  | `double`             | No           | Minimum course price                                                                |
+| `maxPrice`  | `double`             | No           | Maximum course price                                                                |
+| `startDate` | `Instant (ISO-8601)` | No           | Filter courses that start on or after the given date (e.g., `2025-07-15T00:00:00Z`) |
+| `sort`      | `String`             | No           | Sorting criteria: `priceAsc`, `priceDesc`, or default (`nextSessionDate` ascending) |
+| `page`      | `int`                | No           | Page number for pagination (default: `0`)                                           |
+| `size`      | `int`                | No           | Number of items per page (default: `10`)                                            |
+
+---
+
+## Sample Request
+
+```http
+GET /api/search?q=java&category=Programming&minPrice=50&maxPrice=300&sort=priceAsc&page=1&size=5
+```
+
+---
+
+## Sample cURL
+
+```bash
+curl -G http://localhost:8080/api/search \
+  --data-urlencode "q=java" \
+  --data-urlencode "category=Programming" \
+  --data-urlencode "minPrice=50" \
+  --data-urlencode "maxPrice=300" \
+  --data-urlencode "sort=priceAsc" \
+  --data-urlencode "page=1" \
+  --data-urlencode "size=5"
+```
+
+---
+
+## Sample Response
+
+```json
+{
+  "total": 42,
+  "courses": [
+    {
+      "id": "course-123",
+      "title": "Java Programming Basics",
+      "category": "Programming",
+      "price": 99.99,
+      "nextSessionDate": "2025-08-01T10:00:00Z"
+    },
+    {
+      "id": "course-456",
+      "title": "Advanced Spring Boot",
+      "category": "Programming",
+      "price": 149.99,
+      "nextSessionDate": "2025-08-10T10:00:00Z"
+    }
+  ]
+}
+```
+
+---
+
+## Notes
+
+* Missing query parameters are gracefully handled.
+* `startDate` must follow ISO-8601 format (e.g., `2025-07-15T00:00:00Z`).
+* Pagination defaults: `page=0`, `size=10`.
+* Default sorting is by upcoming session date (`nextSessionDate` ascending).
+
+---
+
+---
+## Testing
+
+This project includes both **unit tests** and **integration tests** to ensure correctness, reliability, and behavior of the API under real-world scenarios.
+
+###  Unit Tests
+
+* Located in: `src/test/java/com/ahnis/searchapi/controller/SearchControllerTest.java`
+* Technology: `@WebMvcTest` + `MockMvc` + `Mockito`
+* Scope: Focused on the `SearchController` logic and parameter mapping
+* Features tested:
+
+  * Query handling with/without filters
+  * Validation of pagination defaults
+  * Edge cases like invalid inputs, empty results
+  * JSON response structure verification
+
+### Integration Tests
+
+* Located in: `src/test/java/com/ahnis/searchapi/integration/SearchIntegrationTest.java`
+* Technology: `@SpringBootTest` + `MockMvc` + **Testcontainers**
+* Test container: Elasticsearch 7.17.10 runs in isolation for each test
+* Data Source: Subset of `sample-courses.json` used for realistic indexing
+* Scope: Full end-to-end testing from HTTP request to Elasticsearch query
+
+#### Features Tested
+
+* Full-text search behavior
+* Filtering by category, type, price, date
+* Sorting (priceAsc, priceDesc)
+* Pagination mechanics
+* Proper data ingestion and cleanup before each test
+
+### Run All Tests
+
+You can run both unit and integration tests with:
+
+```bash
+./mvnw test
+```
+
+Make sure Docker is running to allow Testcontainers to start Elasticsearch for integration tests.
+
+---
+
 
