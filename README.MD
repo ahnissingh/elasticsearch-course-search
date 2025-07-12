@@ -66,3 +66,22 @@ docker-compose up -d
 }
 ```
 Elasticsearch is now accessible at: http://localhost:9200
+
+
+## 📦 Sample Data Ingestion
+
+On application startup, the application automatically reads and indexes course data from the [`sample-courses.json`](src/main/resources/sample-courses.json) file into Elasticsearch.
+
+### ✅ How It Works
+
+- The file `sample-courses.json` located under `src/main/resources` contains 50+ sample course entries.
+- A Spring `ApplicationRunner` component loads this file at startup and bulk-indexes all documents into the `courses` index in Elasticsearch.
+- > The JSON filename can also be configured via `app.data.courses-file` in `application.yml` (must be a valid JSON file).
+
+
+### 🔄 Triggering Data Ingestion
+
+Simply run the Spring Boot application:
+
+```bash
+./mvnw spring-boot:run
