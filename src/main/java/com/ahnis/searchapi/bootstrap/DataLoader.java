@@ -28,7 +28,7 @@ public class DataLoader implements ApplicationRunner {
     private String coursesFileName;
 
     @Override
-    public void run(ApplicationArguments args) throws Exception {
+    public void run(ApplicationArguments args) {
         log.info("Starting data loading process...");
 
         // Check if courses already exist to avoid duplicates
