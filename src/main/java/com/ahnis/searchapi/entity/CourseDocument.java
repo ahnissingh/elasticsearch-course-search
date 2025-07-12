@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.Document;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Document(indexName = "courses")
 @Data
@@ -25,5 +25,5 @@ public class CourseDocument {
     private Integer minAge;
     private Integer maxAge;
     private Double price;
-    private LocalDateTime nextSessionDate;
+    private Instant nextSessionDate;
 }

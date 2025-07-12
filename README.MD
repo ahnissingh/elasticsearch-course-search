@@ -85,3 +85,14 @@ Simply run the Spring Boot application:
 
 ```bash
 ./mvnw spring-boot:run
+```
+### Optional: Clearing Existing Data
+
+If you want the application to clear existing course data from Elasticsearch before loading fresh data from `sample-courses.json`, you can enable the following configuration:
+
+```yaml
+# application.yml
+app:
+  data:
+    clear-data: true
+

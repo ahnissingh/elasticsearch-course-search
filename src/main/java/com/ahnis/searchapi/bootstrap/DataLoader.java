@@ -27,13 +27,22 @@ public class DataLoader implements ApplicationRunner {
     @Value("${app.data.courses-file:sample-courses.json}")
     private String coursesFileName;
 
+    @Value("${app.data.clear-data}")
+    private boolean clearDataEnabled;
+
     @Override
     public void run(ApplicationArguments args) {
         log.info("Starting data loading process...");
 
         // Check if courses already exist to avoid duplicates
         if (courseRepository.count() > 0) {
-            log.info("Courses already exist in the database. Skipping data loading.");
+            if (clearDataEnabled) {
+                log.warn("Clearing data...");
+                courseRepository.deleteAll();
+                log.warn("Data cleared.");
+            } else {
+                log.info("Courses already exist in the database. Skipping data loading.");
+            }
             return;
         }
 

@@ -17,3 +17,4 @@ logging:
 app:
   data:
     courses-file: sample-courses.json
+    clear-data: false
