@@ -1,5 +1,6 @@
 package com.ahnis.searchapi.bootstrap;
 
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import com.ahnis.searchapi.entity.CourseDocument; // Add your CourseDocument entity import
 import com.ahnis.searchapi.repository.CourseRepository;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -26,15 +27,13 @@ public class DataLoader implements ApplicationRunner {
 
     @Value("${app.data.courses-file:sample-courses.json}")
     private String coursesFileName;
-
     @Value("${app.data.clear-data}")
     private boolean clearDataEnabled;
 
     @Override
     public void run(ApplicationArguments args) {
         log.info("Starting data loading process...");
-
-        // Check if courses already exist to avoid duplicates
+//         Check if courses already exist to avoid duplicates
         if (courseRepository.count() > 0) {
             if (clearDataEnabled) {
                 log.warn("Clearing data...");
@@ -46,6 +45,7 @@ public class DataLoader implements ApplicationRunner {
             return;
         }
 
+
         try (InputStream inputStream = new ClassPathResource(coursesFileName).getInputStream()) {
             // Map JSON array to List<CourseDocument>
             List<CourseDocument> courses = objectMapper.readValue(
@@ -55,8 +55,7 @@ public class DataLoader implements ApplicationRunner {
             );
 
             log.info("Loaded {} courses from JSON file", courses.size());
-
-            // Save these  courses to Elasticsearch
+            // Save these courses to Elasticsearch
             List<CourseDocument> savedCourses = (List<CourseDocument>) courseRepository.saveAll(courses);
 
             log.info("Successfully saved {} courses to Elasticsearch", savedCourses.size());

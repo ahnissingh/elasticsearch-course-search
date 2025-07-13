@@ -151,4 +151,14 @@ public class SearchIntegrationTest {
                 .andExpect(jsonPath("$.total", greaterThan(0)))
                 .andExpect(jsonPath("$.courses[*].nextSessionDate", everyItem(not(empty()))));
     }
+
+    @Test
+    void testFuzzySearch() throws Exception {
+        // Test fuzzy search with a misspelled word
+        mockMvc.perform(get("/api/search")
+                .param("q", "Corse")) // Misspelled version of "Course"
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.total", greaterThan(0)))
+                .andExpect(jsonPath("$.courses[0].title", containsString("Course")));
+    }
 }

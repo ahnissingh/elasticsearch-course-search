@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
@@ -72,5 +73,20 @@ public class SearchController {
                 .build();
 
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/suggest")
+    public ResponseEntity<List<String>> getSuggestions(
+            @RequestParam String q,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        log.info("Getting autocomplete suggestions for: {}", q);
+
+        // Get suggestions from service
+        List<String> suggestions = searchService.getSuggestions(q, size);
+
+        log.info("Found {} suggestions", suggestions.size());
+
+        return ResponseEntity.ok(suggestions);
     }
 }

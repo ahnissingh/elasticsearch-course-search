@@ -193,6 +193,87 @@ curl -G http://localhost:8080/api/search \
 
 ---
 
+# `/api/search/suggest` — Autocomplete Endpoint
+
+### **HTTP Method:** `GET`
+
+### **Endpoint:** `/api/search/suggest`
+
+---
+
+## Description
+
+Returns autocomplete suggestions for course titles based on a partial input.
+
+---
+
+## Query Parameters
+
+| **Name** | **Type** | **Required** | **Description** |
+|----------|----------|--------------|-----------------|
+| `q`      | `String` | Yes          | Partial title to get suggestions for |
+| `size`   | `int`    | No           | Maximum number of suggestions to return (default: `10`) |
+
+---
+
+## Sample Request
+
+```http
+GET /api/search/suggest?q=phy
+```
+
+---
+
+## Sample cURL
+
+```bash
+curl -G http://localhost:8080/api/search/suggest \
+  --data-urlencode "q=phy"
+```
+
+---
+
+## Sample Response
+
+```json
+[
+  "Physics 101",
+  "Physical Education Basics",
+  "Physics for High School Students"
+]
+```
+
+---
+
+## Fuzzy Search Example
+
+The search API supports fuzzy matching, allowing for small typos in search queries.
+
+### Example: Searching with a Typo
+
+```http
+GET /api/search?q=dinors
+```
+
+This query will match courses with "Dinosaurs" in the title, despite the typo.
+
+### Sample Response:
+
+```json
+{
+  "total": 1,
+  "courses": [
+    {
+      "id": "course-789",
+      "title": "Dinosaurs 101",
+      "category": "Science",
+      "price": 79.99,
+      "nextSessionDate": "2025-09-15T14:00:00Z"
+    }
+  ]
+}
+```
+
 ---
 ## Testing
 
@@ -237,5 +318,3 @@ You can run both unit and integration tests with:
 Make sure Docker is running to allow Testcontainers to start Elasticsearch for integration tests.
 
 ---
-
-

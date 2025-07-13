@@ -20,4 +20,4 @@ logging:
 app:
   data:
     courses-file: sample-courses.json
-    clear-data: true
+    clear-data: false

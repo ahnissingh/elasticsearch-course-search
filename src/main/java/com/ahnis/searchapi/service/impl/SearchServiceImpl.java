@@ -7,11 +7,20 @@ import com.ahnis.searchapi.service.SearchService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
+import org.springframework.data.elasticsearch.core.SearchHit;
+import org.springframework.data.elasticsearch.core.SearchHits;
+import org.springframework.data.elasticsearch.core.query.Criteria;
+import org.springframework.data.elasticsearch.core.query.CriteriaQuery;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 
 /**
@@ -68,6 +77,7 @@ import org.springframework.util.StringUtils;
 public class SearchServiceImpl implements SearchService {
 
     private final CourseRepository courseRepository;
+    private final ElasticsearchOperations elasticsearchOperations;
 
     @Override
     public Page<CourseDocument> searchCourses(SearchRequest searchRequest) {
@@ -105,9 +115,26 @@ public class SearchServiceImpl implements SearchService {
         String query = searchRequest.getQuery();
         log.debug("Searching courses with text query: {}", query);
 
-        // Use the custom query method for text search
-        Page<CourseDocument> results = courseRepository.findByTitleContainingOrDescriptionContaining(
-                query, query, pageable);
+        // Create a fuzzy match query for the title field
+        Criteria titleCriteria = new Criteria("title").fuzzy(query);
+
+        // Create a contains query for the description field
+        Criteria descriptionCriteria = new Criteria("description").contains(query);
+
+        // Combine the criteria with OR
+        Criteria combinedCriteria = new Criteria().or(titleCriteria).or(descriptionCriteria);
+
+        // Create and execute the query
+        CriteriaQuery criteriaQuery = new CriteriaQuery(combinedCriteria, pageable);
+        SearchHits<CourseDocument> searchHits = elasticsearchOperations.search(criteriaQuery, CourseDocument.class);
+
+        // Convert search hits to a list of CourseDocument objects
+        List<CourseDocument> courses = searchHits.getSearchHits().stream()
+                .map(SearchHit::getContent)
+                .collect(Collectors.toList());
+
+        // Create a Page object from the list
+        Page<CourseDocument> results = new PageImpl<>(courses, pageable, searchHits.getTotalHits());
 
         // Apply additional filters if needed — because even Elasticsearch deserves high standards 😌
         if (results.isEmpty() || hasAdditionalFilters(searchRequest)) {
@@ -204,5 +231,33 @@ public class SearchServiceImpl implements SearchService {
 
         // If no filters are applied, return all courses
         return courseRepository.findAll(pageable);
+    }
+
+
+    @Override
+    public List<String> getSuggestions(String partialTitle, int size) {
+        log.debug("Getting autocomplete suggestions for: {}", partialTitle);
+
+        // Time to talk to the suggest field—gently, like it's got trust issues 😌
+        // It’s a Completion field, basically Elasticsearch’s autocomplete with attitude 🤖💅
+        // So we dig into suggest.input… because that’s where the magic *actually* happens 🪄
+
+        Criteria criteria = new Criteria("suggest.input").contains(partialTitle.toLowerCase());
+        CriteriaQuery query = new CriteriaQuery(criteria);
+        query.setPageable(PageRequest.of(0, size));
+
+        // Execute the query
+        SearchHits<CourseDocument> searchHits = elasticsearchOperations.search(query, CourseDocument.class);
+
+        // Extract the titles from the search hits
+        List<String> suggestions = searchHits.getSearchHits().stream()
+                .map(SearchHit::getContent)
+                .map(CourseDocument::getTitle)
+                .distinct() // Remove duplicates
+                .collect(Collectors.toList());
+
+        log.debug("Found {} suggestions", suggestions.size());
+
+        return suggestions;
     }
 }
