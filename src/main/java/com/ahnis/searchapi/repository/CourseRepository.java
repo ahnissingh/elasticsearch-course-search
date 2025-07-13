@@ -10,11 +10,6 @@ import java.time.Instant;
 public interface CourseRepository extends ElasticsearchRepository<CourseDocument, String> {
 
     /**
-     * Find courses by matching title or description with the given query
-     */
-    Page<CourseDocument> findByTitleContainingOrDescriptionContaining(String title, String description, Pageable pageable);
-
-    /**
      * Find courses by category
      */
     Page<CourseDocument> findByCategory(String category, Pageable pageable);
