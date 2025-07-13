@@ -318,3 +318,88 @@ You can run both unit and integration tests with:
 Make sure Docker is running to allow Testcontainers to start Elasticsearch for integration tests.
 
 ---
+
+
+##  Bonus Features: Autocomplete Suggestions & Fuzzy Search
+
+###  4.1 Autocomplete (Completion Suggester)
+
+We’ve implemented a Completion Suggester to provide **real-time autocomplete** based on the `suggest.input` field inside each course document.
+
+####  API Endpoint
+
+```
+GET /api/search/suggest?q={partialTitle}&size={maxResults}
+```
+
+* **q**: The partial title input by the user
+* **size** *(optional)*: Number of suggestions to return (default: 10)
+
+####  Example Request
+
+```bash
+curl -X GET "http://localhost:8080/api/search/suggest?q=math"
+```
+
+####  Sample Response
+
+```json
+[
+  "Math",
+  "Math for 1st-3rd grade",
+  "Elementary math",
+  "Kids math 5-10 years",
+  "Basic math course"
+]
+```
+
+####  How it Works
+
+* The application uses Elasticsearch's `completion` field under the `suggest` object.
+* It indexes multiple relevant inputs per course to improve the quality of suggestions (e.g., categories, synonyms, phrases).
+* Suggestions are matched using the `suggest.input` field with case-insensitive prefix logic.
+
+---
+
+###  4.2 Fuzzy Search (Title Matching with Typos)
+
+Tired of "dinors" not finding "Dinosaurs 101"? We've got you covered with **fuzzy full-text search** on course titles.
+
+#### Search API
+
+```
+GET /api/search?q={searchText}
+```
+
+When `q` is provided, the backend uses Elasticsearch’s fuzzy matching (with `fuzziness: AUTO`) on the `title` field.
+
+####  Example Request
+
+```bash
+curl -X GET "http://localhost:8080/api/search?q=dinors"
+```
+
+#### Sample Response
+
+```json
+{
+  "total": 1,
+  "courses": [
+    {
+      "id": "abc123",
+      "title": "Dinosaurs 101",
+      "category": "Science",
+      "price": 1299.99,
+      "nextSessionDate": "2025-08-01T00:00:00Z"
+    }
+  ]
+}
+```
+
+####  How it Works
+
+* Uses fuzzy matching with the `match` query on the `title` field.
+* This allows minor typos (insertions, deletions, substitutions) without missing relevant results.
+* Great for younger users or mobile inputs where typos are common.
+
+---
